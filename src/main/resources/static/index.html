@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Micro Fuzzer Test</title>
+</head>
+<body>
+    <h1>Simple Test</h1>
+    
+    <form id="testForm">
+        <textarea name="content" placeholder="Enter some code..." style="width: 100%; height: 100px;"></textarea>
+        <input type="hidden" name="username" value="testuser">
+        <button type="submit">Test Fix</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('Form submitted!');
+            
+            const formData = new FormData(e.target);
+            
+            // To send a simple application/x-www-form-urlencoded body (the default for form data),
+            // we convert the FormData to URLSearchParams and set the Content-Type header.
+            const urlSearchParams = new URLSearchParams(formData);
+
+            document.getElementById('result').innerHTML = 'Processing...';
+
+            try {
+                const response = await fetch('/api/fix-text', { // NOTE: Corrected URL to /api/fix-text
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded' // Required for @RequestParam
+                    },
+                    body: urlSearchParams.toString() // Send as URL-encoded string
+                });
+                
+                console.log('Response status:', response.status);
+                
+                // The server returns JSON, so we must parse it as JSON.
+                const result = await response.json();
+                console.log('Parsed response:', result);
+                
+                if (response.ok && result.success) {
+                    let output = '<h3>✅ Fix Successful!</h3>';
+                    output += '<h4>Errors Found (' + result.errorCount + '):</h4>';
+                    output += '<pre>' + result.errors + '</pre>';
+                    output += '<h4>Fixed Content:</h4>';
+                    output += '<pre>' + result.fixedContent + '</pre>';
+                    document.getElementById('result').innerHTML = output;
+                } else {
+                    // Handle server-side errors
+                    const errorMessage = result.error || 'Unknown error occurred.';
+                    document.getElementById('result').innerHTML = '<h3>❌ Error!</h3><p>' + errorMessage + '</p>';
+                }
+
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                document.getElementById('result').innerHTML = '<h3>❌ Network/Parse Error!</h3><p>' + error.message + '</p>';
+            }
+        });
+        
+        console.log('Test page loaded');
+    </script>
+</body>
+</html>
